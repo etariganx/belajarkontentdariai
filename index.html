@@ -3,567 +3,662 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rencana Konten Mingguan</title>
-    <!-- Memuat Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Menggunakan font Inter --><style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
+    <title>Game Teka Teki Silang (TTS)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles */
+        .cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #333;
+            text-align: center;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
-        /* Menyembunyikan konten secara default untuk minggu > 1 */
-        .minggu-content:not(:first-of-type) {
-            display: none;
+        .cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            text-transform: uppercase;
+            background: transparent;
+            outline: none;
+            font-size: 1.2rem;
+            padding: 0;
+        }
+        .cell.black {
+            background-color: #333;
+            border: 1px solid #333;
+            cursor: default;
+        }
+        .cell.active {
+            background-color: #fff7ed; /* orange-50 */
+        }
+        .cell.focused {
+            background-color: #fbd38d; /* orange-200 */
+        }
+        .cell-number {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            font-size: 8px;
+            line-height: 1;
+            color: #555;
+            pointer-events: none;
+        }
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-purple-50 via-white to-indigo-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+    <!-- App Container -->
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative overflow-hidden">
 
-    <!-- Menu Navigasi Utama --><nav class="bg-white shadow-lg w-full">
-        <div class="container mx-auto max-w-5xl px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-indigo-700">Rencana Konten Saya</h1>
-            <a href="#footer-kontak" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition duration-300 shadow-md">
-                Hubungi Saya
-            </a>
+        <!-- HEADER -->
+        <header class="bg-blue-600 text-white p-4 shadow-md z-10 relative">
+            <h1 class="text-xl font-bold text-center">Game TTS Seru</h1>
+        </header>
+
+        <!-- SCREENS -->
+
+        <!-- MAIN MENU -->
+        <div id="screen-menu" class="p-6 space-y-4">
+            <h2 class="text-2xl font-bold text-center mb-6 text-blue-700">Pilih Kategori</h2>
+
+            <button onclick="startGame('hewan')" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow transition transform hover:scale-105 flex items-center justify-center gap-2">
+                🐾 Nama Hewan
+            </button>
+
+            <button onclick="startGame('buah')" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow transition transform hover:scale-105 flex items-center justify-center gap-2">
+                🍎 Nama Buah
+            </button>
+
+            <button onclick="startGame('kota')" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-xl shadow transition transform hover:scale-105 flex items-center justify-center gap-2">
+                🏙️ Nama Kota
+            </button>
+
+            <button onclick="startGame('umum')" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-xl shadow transition transform hover:scale-105 flex items-center justify-center gap-2">
+                🧠 Pengetahuan Umum
+            </button>
+
+            <div class="pt-4 border-t border-gray-200"></div>
+
+            <button onclick="showLeaderboard()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl shadow transition transform hover:scale-105 flex items-center justify-center gap-2">
+                🏆 Leaderboard
+            </button>
+
+            <button onclick="showContest()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl shadow transition transform hover:scale-105 flex items-center justify-center gap-2">
+                🎁 Info Kontes
+            </button>
         </div>
-    </nav>
 
-    <!-- Menu Navigasi Mingguan (Horizontal Scrollable) --><div class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div class="container mx-auto max-w-5xl px-4">
-            <div class="py-3 overflow-x-auto">
-                <div id="minggu-menu" class="flex space-x-3 whitespace-nowrap">
-                    <!-- Link minggu akan ditambahkan oleh JavaScript --></div>
+        <!-- GAME SCREEN -->
+        <div id="screen-game" class="hidden flex flex-col h-full">
+            <div class="p-2 bg-blue-50 flex justify-between items-center border-b">
+                <button onclick="showMenu()" class="text-blue-600 font-bold text-sm hover:underline">← Menu</button>
+                <div class="font-mono font-bold text-lg text-blue-800" id="timer">00:00</div>
+                <button onclick="giveUp()" class="text-red-500 font-bold text-sm hover:underline">Menyerah</button>
+            </div>
+
+            <div class="p-4 flex-grow overflow-y-auto">
+                <!-- Grid Container -->
+                <div id="grid-container" class="mx-auto bg-black p-1 border-2 border-gray-800 shadow-lg mb-6" style="width: fit-content;">
+                    <!-- Grid will be generated here -->
+                </div>
+
+                <!-- Clues -->
+                <div class="space-y-4">
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <h3 class="font-bold text-blue-800 mb-1 text-sm">MENDATAR</h3>
+                        <ul id="clues-across" class="text-sm text-gray-700 space-y-1 list-decimal list-inside"></ul>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg border border-green-100">
+                        <h3 class="font-bold text-green-800 mb-1 text-sm">MENURUN</h3>
+                        <ul id="clues-down" class="text-sm text-gray-700 space-y-1 list-decimal list-inside"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white border-t border-gray-200">
+                <button onclick="checkAnswers()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg transition">
+                    Cek Jawaban
+                </button>
             </div>
         </div>
+
+        <!-- LEADERBOARD SCREEN -->
+        <div id="screen-leaderboard" class="hidden p-6">
+            <button onclick="showMenu()" class="mb-4 text-blue-600 font-bold hover:underline">← Kembali</button>
+            <h2 class="text-2xl font-bold text-center mb-6 text-yellow-600">🏆 Papan Peringkat</h2>
+
+            <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Kategori</th>
+                            <th class="px-4 py-3 text-right">Skor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-list">
+                        <!-- Entries go here -->
+                    </tbody>
+                </table>
+                <div id="no-scores" class="p-4 text-center text-gray-500 hidden">Belum ada skor. Mainkan game sekarang!</div>
+            </div>
+        </div>
+
+        <!-- CONTEST SCREEN -->
+        <div id="screen-contest" class="hidden p-6 text-center">
+             <button onclick="showMenu()" class="absolute top-4 left-4 text-blue-600 font-bold hover:underline">← Kembali</button>
+             <div class="mt-10">
+                <div class="text-6xl mb-4">🎁</div>
+                <h2 class="text-2xl font-bold text-indigo-700 mb-2">Kontes TTS</h2>
+                <p class="text-gray-600 mb-6">Nantikan kontes berhadiah menarik di update selanjutnya!</p>
+                <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100 text-left">
+                    <h3 class="font-bold text-indigo-800 mb-2">Rencana Kedepan:</h3>
+                    <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                        <li>Turnamen Mingguan</li>
+                        <li>Hadiah Saldo E-Wallet</li>
+                        <li>Kategori Spesial</li>
+                    </ul>
+                </div>
+             </div>
+        </div>
+
+        <!-- RESULT MODAL -->
+        <div id="modal-result" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center transform transition-all scale-100">
+                <div class="text-5xl mb-4" id="result-icon">🎉</div>
+                <h2 class="text-2xl font-bold mb-2" id="result-title">Selamat!</h2>
+                <p class="text-gray-600 mb-4" id="result-message">Kamu menyelesaikan TTS ini.</p>
+
+                <div id="score-entry" class="hidden mb-4 text-left">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Masukkan Nama Kamu:</label>
+                    <input type="text" id="player-name" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Nama Pemenang">
+                </div>
+
+                <div class="flex gap-2 justify-center">
+                    <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Tutup</button>
+                    <button id="save-btn" onclick="saveScore()" class="hidden bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Simpan Skor</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Container Utama Konten Mingguan --><div class="container mx-auto max-w-4xl p-4 md:p-8">
+    <script>
+        // DATA WORDS
+        const wordData = {
+            hewan: [
+                { word: "GAJAH", clue: "Hewan darat terbesar" },
+                { word: "SINGA", clue: "Raja hutan" },
+                { word: "KUCING", clue: "Hewan berbulu yang suka mengeong" },
+                { word: "ULAR", clue: "Reptil panjang tidak berkaki" },
+                { word: "BURUNG", clue: "Hewan bersayap bisa terbang" },
+                { word: "IKAN", clue: "Bernapas dengan insang" },
+                { word: "AYAM", clue: "Berkokok di pagi hari" },
+                { word: "KELINCI", clue: "Suka makan wortel" },
+                { word: "HARIMAU", clue: "Kucing besar belang-belang" },
+                { word: "BUAYA", clue: "Reptil buas di sungai" }
+            ],
+            buah: [
+                { word: "APEL", clue: "Buah merah, identik dengan kota Malang" },
+                { word: "JERUK", clue: "Kaya vitamin C, warna oranye" },
+                { word: "PISANG", clue: "Buah kuning melengkung" },
+                { word: "ANGGUR", clue: "Buah kecil bergerombol" },
+                { word: "DURIAN", clue: "Raja buah, kulit berduri" },
+                { word: "MANGGA", clue: "Buah manis, ada jenis Harum Manis" },
+                { word: "NANAS", clue: "Buah bersisik, punya mahkota" },
+                { word: "SEMANGKA", clue: "Buah besar, daging merah, banyak air" },
+                { word: "SALAK", clue: "Kulitnya seperti sisik ular" }
+            ],
+            kota: [
+                { word: "JAKARTA", clue: "Ibukota Indonesia" },
+                { word: "BANDUNG", clue: "Kota Kembang" },
+                { word: "SURABAYA", clue: "Kota Pahlawan" },
+                { word: "MEDAN", clue: "Ibukota Sumatera Utara" },
+                { word: "DENPASAR", clue: "Ibukota provinsi Bali" },
+                { word: "YOGYAKARTA", clue: "Daerah Istimewa, Kota Pelajar" },
+                { word: "SEMARANG", clue: "Ibukota Jawa Tengah" },
+                { word: "MAKASSAR", clue: "Ibukota Sulawesi Selatan" },
+                { word: "BOGOR", clue: "Kota Hujan" }
+            ],
+            umum: [
+                { word: "AIR", clue: "Dibutuhkan makhluk hidup (H2O)" },
+                { word: "API", clue: "Menghasilkan panas dan cahaya" },
+                { word: "MATAHARI", clue: "Pusat tata surya" },
+                { word: "BULAN", clue: "Satelit alami bumi" },
+                { word: "INDONESIA", clue: "Negara kita tercinta" },
+                { word: "OKSIGEN", clue: "Gas yang kita hirup" },
+                { word: "PELANGI", clue: "Muncul setelah hujan, berwarna-warni" },
+                { word: "KOMPUTER", clue: "Alat elektronik untuk mengolah data" }
+            ]
+        };
 
-        <!-- Konten Minggu 1 --><div id="minggu-1-content" class="minggu-content">
-            <header class="text-center mb-8 mt-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Rencana Konten Minggu 1</h2>
-                <p class="text-xl md:text-2xl text-indigo-600 font-medium">
-                    🎬 Konten Lucu – Versi Realistik + Voice Over
-                </p>
-            </header>
+        // STATE
+        let currentCategory = '';
+        let grid = [];
+        let placedWords = [];
+        let timerInterval;
+        let startTime;
+        let timeElapsed = 0;
+        const gridSize = 12;
 
-            <div class="space-y-6">
-                <!-- SENIN MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Senin – “Bangun Pagi versi Realita”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu berusaha bangun pagi dengan semangat, tapi setiap kali alarm bunyi, ekspresimu makin lelah. Akhirnya bangun jam 10 dan bilang “masih pagi kok… di London.”
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic video of [photo of you attached], lying in bed with messy hair, eyes half open, irritated by a loud alarm clock. The morning sunlight enters the room softly. The person grabs the phone, turns off the alarm, looks at the camera, and mutters sarcastically, “still early… in London.” Real lighting, cinematic tone, soft humor vibe, realistic skin texture, 4K, vertical format.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Sleepy, sarcastic tone) <br>
-                                “Katanya bangun pagi bikin sukses… yaudah, sukses telat aja dulu. Masih pagi kok… di London.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        // INIT
+        function showScreen(id) {
+            document.querySelectorAll('#app > div[id^="screen-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
 
-                <!-- SELASA MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Selasa – “Ngopi Biar Nggak Emosi”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu duduk lemas di meja kerja, kelihatan bete. Begitu minum kopi, langsung berubah jadi energik, penuh semangat — sampai terlalu semangat.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic video of [photo of you attached], sitting at a desk looking exhausted, dark under-eye circles, blank stare. Then taking a sip of coffee from a mug. Suddenly, their eyes widen and they smile brightly, typing fast with exaggerated enthusiasm. Warm café lighting, steam from the cup visible, ASMR background of coffee pouring. Vertical format, cinematic realism.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Calm to energized tone) <br>
-                                “Sebelum kopi, dunia kayak musuh. Setelah kopi… aku siap menaklukkan tugas, kerjaan, dan drama kantor.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        function showMenu() {
+            stopTimer();
+            showScreen('screen-menu');
+        }
 
-                <!-- RABU MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Rabu – “Chat Paling Nyebelin”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu baca chat dari seseorang yang selalu ngasih respon “terserah” atau “up to you.” Ekspresi wajahmu berubah dari sabar ke meledak dalam diam.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic close-up of [photo of you attached] reading phone screen, facial expression changing from calm to annoyed, rolling eyes, muttering under breath. Subtle comedy style, indoor lighting, realistic movement, cinematic detail, smartphone screen light reflected on face. Vertical frame.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Dry humor, annoyed tone) <br>
-                                “Katanya ‘terserah’ tapi kalau aku pilih, salah. Ini debat logika… atau jebakan batman?”
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        function showLeaderboard() {
+            renderLeaderboard();
+            showScreen('screen-leaderboard');
+        }
 
-                <!-- KAMIS MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Kamis – “Tiba-Tiba Dewasa”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu menatap jauh ke jendela, teringat masa kecil yang pengen cepat dewasa. Potongan visual masa kini: tagihan, kerjaan, deadline, wajah pasrah. Ending: “Pengen refund masa kecil.”
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic cinematic video of [photo of you attached], staring out the window with a nostalgic expression. Soft lighting, bokeh city background. Quick cuts of them paying bills, tired at computer, sighing deeply. Subtle voice-over “I used to want to grow up… now I want a refund.” Warm film tone, real human textures, emotional realism.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Soft, reflective tone) <br>
-                                “Dulu pengen cepet gede… biar bebas. Sekarang udah gede, malah pengen refund. Ternyata hidup tuh, bukan level up — tapi mode survival.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        function showContest() {
+            showScreen('screen-contest');
+        }
 
-                <!-- JUMAT MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Jumat – “Drama HP Lemot”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu frustrasi karena HP lemot. Pukul-pukul layar, tiup port charger, lalu tatap kamera seperti mau protes ke semesta. Punchline: “HP ini kayak mantan, nggak mau diajak cepat.”
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic short video of [photo of you attached], frustrated with a slow smartphone. Their tapping becomes harder, they sigh loudly, roll eyes, then look at the camera with mock anger. Realistic indoor lighting, cinematic detail, expressive acting, subtle humor tone, vertical format.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Frustrated, sassy tone) <br>
-                                “HP ini kayak mantan. Dipegang dikit, nge-lag. Ditinggal sebentar, malah nyala. Susah move on, tapi nggak mau upgrade.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        // GAME LOGIC
+        function startGame(category) {
+            currentCategory = category;
+            const words = [...wordData[category]]; // Copy array
 
-                <!-- SABTU MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Sabtu – “Kucing Saya vs Saya”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu dan kucingmu punya kebiasaan mirip — kamu kerja, dia tidur di keyboard. Kamu makan, dia ikutan ngelirik. Ending-nya: kalian rebahan barek.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic video of [photo of you attached] sitting at a desk while a fat orange cat lies lazily on the keyboard. The person gently moves the cat, but it refuses. Both end up lying down together on the sofa. Natural daylight, cozy home interior, warm tone, realistic fur and skin texture. Comedic, wholesome vibe.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Playful, amused tone) <br>
-                                “Katanya kucing niru pemiliknya. Sekarang dia suka rebahan, makan tiap dua jam, dan ngantuk pas jam kerja. Jadi sebenernya siapa yang niru siapa?”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MINGGU MINGGU 1 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Minggu – “Weekend = Produktif (Katanya)”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu niat banget mau produktif di weekend, tapi ending-nya rebahan.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic cinematic video of [photo of you attached], setting up a workspace with coffee and laptop, looking determined. Then, hard cut to them lying on couch watching cat videos on phone, laughing lazily. Cozy lighting, smooth transitions, realistic details, vertical composition, humorous tone.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Relaxed, lazy tone) <br>
-                                “Weekend katanya buat recharge biar produktif. Tapi recharge-nya kepanjangan, jadi malah lowbat di Senin.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- /#minggu-1-content --><!-- Konten Minggu 2 --><div id="minggu-2-content" class="minggu-content">
-            <header class="text-center mb-8 mt-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Rencana Konten Minggu 2</h2>
-                <p class="text-xl md:text-2xl text-indigo-600 font-medium">
-                    🎬 “Lucu Tapi Lawan Dunia”
-                </p>
-                <p class="text-gray-500 text-sm mt-2">Durasi: 15–25 detik | Style: cinematic, relatable humor, real acting, vertical (9:16)</p>
-            </header>
-
-            <div class="space-y-6">
-                <!-- SENIN MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Senin – “Autocorrect Si Pengkhianat”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu kirim chat serius, tapi autocorrect malah ubah jadi kalimat memalukan.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic video of [photo of you attached], sitting at a desk, texting seriously on phone. Suddenly, shocked expression after seeing autocorrect change the word into something embarrassing. The person facepalms, then looks at camera in disbelief. Warm indoor lighting, cinematic realism, expressive reaction, 4K vertical frame.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Frustrated, sarcastic tone) <br>
-                                “Autocorrect tuh bukan bantu nulis, tapi bantu ngerusak reputasi. Satu huruf salah, langsung dikira flirting.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SELASA MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Selasa – “Ketika AI Lebih Pintar dari Aku”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu nanya sesuatu ke AI, terus jawaban AI-nya malah ngatain kamu secara halus.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic short cinematic video of [photo of you attached], sitting at computer screen, typing something to an AI chatbot. Their expression changes from confident to offended, then they slowly close the laptop dramatically. Realistic lighting, soft humor tone, office vibe, 4K vertical format.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Calm but offended tone) <br>
-                                “Aku cuma nanya cara jadi produktif. AI-nya jawab: ‘mulai dari berhenti rebahan.’ Seketika aku merasa di-judge digital.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- RABU MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Rabu – “Wifi Kuat Tapi Hidup Lemah”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Internet lancar, tapi mood kamu buffering terus.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic cinematic shot of [photo of you attached], scrolling phone fast, everything works smoothly, but expression looks empty and bored. Subtle room lighting, quiet ambiance, melancholic comedy vibe, 4K vertical.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Deadpan tone) <br>
-                                “Wifi 100 Mbps, tapi motivasi 0. Internet cepet banget, tapi hidup tetep loading.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- KAMIS MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Kamis – “Meeting Tanpa Akhir”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Parodi situasi meeting online yang muter-muter nggak selesai-selesai.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic video of [photo of you attached], sitting at desk with headset on, pretending to be in a video meeting. They fake laugh, nod repeatedly, then stare blankly at the screen as time passes. Real office lighting, cinematic humor realism, subtle time-lapse feeling.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Tired but forced cheer tone) <br>
-                                “Udah dua jam meeting, hasilnya? Rencana buat meeting lagi. Produktif banget… buat server Zoom.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- JUMAT MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Jumat – “Kehidupan di ATM”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu ambil uang di ATM, lihat saldo, langsung galau eksistensial.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic close-up of [photo of you attached] at an ATM machine, confidently inserting card. When the balance appears, expression changes from neutral to horrified. Subtle cinematic lighting, realistic reflections on ATM screen, emotional comedy tone.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Shocked whisper tone) <br>
-                                “Gaji masuk kemarin. Sekarang sisa dua digit. Entah ATM-nya error… atau aku yang error dalam manajemen hidup.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SABTU MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Sabtu – “Sosial Media vs Realita”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu upload story keren, aesthetic banget, tapi kenyataannya berantakan total di balik layar.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic cinematic video of [photo of you attached], recording an aesthetic coffee moment for social media. The background looks messy, camera slightly tilted. Then quick cuts between “what you post” (perfect filter) vs “what actually happens” (chaotic real life). Natural daylight, vertical composition, comedic contrast.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Playful irony tone) <br>
-                                “Story: hidupku chill banget. Realita: kopi tumpah, kerjaan numpuk, dan aku pura-pura santai demi like.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MINGGU MINGGU 2 --><div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Minggu – “Manusia, Tidur, dan Drama Alarm”</h3>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-4 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">💡</span>Ide
-                        </h4>
-                        <p class="text-gray-600 leading-relaxed">
-                            Kamu udah niat bangun pagi, tapi malah jadi sinetron antara alarm, otak, dan kasur.
-                        </p>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎥</span>Prompt Video
-                        </h4>
-                        <div class="bg-gray-50 p-4 rounded-md border-l-4 border-gray-300">
-                            <p class="text-gray-700 font-mono text-sm leading-relaxed">
-                                Realistic cinematic shot of [photo of you attached], turning off multiple alarms, covering head with pillow, then rolling dramatically like it’s a telenovela. Morning sunlight peeking through window, warm lighting, soft humor realism, vertical format.
-                            </p>
-                        </div>
-                        <h4 class="text-lg font-semibold text-gray-700 mt-5 mb-2 flex items-center">
-                            <span class="mr-2 text-xl">🎙️</span>Voice Over
-                        </h4>
-                        <div class="bg-indigo-50 p-4 rounded-md border-l-4 border-indigo-300">
-                            <p class="text-indigo-800 italic font-medium leading-relaxed">
-                                (Melodramatic tone, like a narrator in a drama) <br>
-                                “Setiap pagi, pertarungan dimulai. Antara niat bangun dan kasur empuk. Dan seperti biasa… kasur menang telak.”
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- /#minggu-2-content --><!-- FOOTER --><footer id="footer-kontak" class="bg-white rounded-lg shadow-xl mt-12 py-8 px-4">
-            <div class="container mx-auto max-w-5xl text-center">
-                <h3 class="text-2xl font-semibold text-gray-800 mb-6">Temukan Saya di Sini!</h3>
-                <div class="flex justify-center space-x-6 md:space-x-8">
-                    <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-green-500 transition duration-300" title="WhatsApp">
-                        <span class="sr-only">WhatsApp</span>
-                        <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.06 21.94L7.31 20.58C8.75 21.38 10.36 21.82 12.04 21.82C17.5 21.82 21.95 17.37 21.95 11.91C21.95 6.45 17.5 2 12.04 2ZM17.83 15.24C17.58 15.81 16.49 16.42 16.09 16.48C15.7 16.54 15.19 16.56 14.81 16.39C14.43 16.22 13.63 15.95 12.69 15.08C11.51 13.99 10.79 12.68 10.63 12.38C10.47 12.08 10.33 11.9 10.19 11.7C10.05 11.5 9.87 11.33 9.68 11.13C9.49 10.93 9.3 10.78 9.15 10.55C9 10.31 8.85 10.04 8.7 9.73C8.56 9.42 8.41 9.01 8.41 8.5C8.41 7.99 8.56 7.53 8.76 7.33C8.96 7.13 9.21 7.03 9.48 7.03C9.58 7.03 9.68 7.04 9.77 7.06C9.97 7.1 10.15 7.18 10.3 7.45C10.47 7.72 10.64 8.08 10.74 8.28C10.84 8.48 10.91 8.7 10.83 8.93C10.75 9.16 10.65 9.28 10.51 9.43C10.37 9.58 10.27 9.68 10.18 9.78C10.09 9.88 10 9.96 9.88 10.08C9.76 10.2 9.65 10.31 9.75 10.51C9.85 10.71 10.3 11.53 11.08 12.27C11.97 13.11 12.79 13.48 13.04 13.64C13.29 13.8 13.45 13.88 13.62 14.03C13.79 14.18 13.91 14.28 14.07 14.38C14.23 14.48 14.36 14.53 14.54 14.45C14.72 14.37 15.06 14.18 15.38 13.8C15.7 13.42 15.94 13.32 16.24 13.32C16.54 13.32 17.15 13.62 17.38 13.88C17.61 14.14 17.83 14.65 17.83 15.24Z"></path>
-                        </svg>
-                    </a>
-                    <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-pink-600 transition duration-300" title="Instagram">
-                        <span class="sr-only">Instagram</span>
-                        <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 16c-3.314 0-6-2.686-6-6s2.686-6 6-6 6 2.686 6 6-2.686 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm6.5-3c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5S19.328 5 18.5 5z" clip-rule="evenodd"></path>
-                        </svg>
-                    </a>
-                    <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-blue-600 transition duration-300" title="Facebook">
-                        <span class="sr-only">Facebook</span>
-                        <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                           <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm3.5 8.5h-2v-2c0-.552.448-1 1-1h1V6h-2c-1.657 0-3 1.343-3 3v2h-2v2h2v6h3v-6h2l1-2z"></path>
-                        </svg>
-                    </a>
-                    <a href="#" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-black transition duration-300" title="TikTok">
-                        <span class="sr-only">TikTok</span>
-                        <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12.53.02C13.17 0 13.8.1 14.4.25v4.03c-1.1-.3-2.28-.5-3.5-.5-2.65 0-4.93 1.5-5.89 3.65-.18.4-.34.8-.48 1.23H5.1c.07-.38.15-.75.25-1.12.9-2.38 3.32-4.1 6.18-4.1.3 0 .6.02.9.06v3.98c-1.03-.27-2.12-.42-3.25-.42-3.5 0-6.33 2.82-6.33 6.3s2.83 6.3 6.33 6.3c3.47 0 6.3-2.8 6.3-6.27v-4.1c.48.1.95.23 1.4.38v3.68c0 4.9-3.98 8.88-8.88 8.88-4.9 0-8.88-3.98-8.88-8.88S7.1.02 12.02.02c.17 0 .34 0 .5.01z"></path>
-                        </svg>
-                    </a>
-                </div>
-                <p class="text-gray-500 text-sm mt-8">
-                    Jadwal Konten Mingguan | Dibuat untuk pembelajaran
-                </p>
-            </div>
-        </footer>
-
-    </div> <!-- /container --><!-- JavaScript untuk membuat menu minggu dan mengelola tampilan konten --><script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuContainer = document.getElementById('minggu-menu');
-            const totalMinggu = 52; // Total minggu dalam 1 tahun
-            const allContentDivs = document.querySelectorAll('.minggu-content');
-
-            // Fungsi untuk menampilkan/menyembunyikan konten minggu
-            function showWeekContent(weekNumber) {
-                allContentDivs.forEach(div => {
-                    if (div.id === `minggu-${weekNumber}-content`) {
-                        div.style.display = 'block';
-                    } else {
-                        div.style.display = 'none';
-                    }
-                });
-                // Gulir ke atas halaman setelah konten diubah
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Generate Grid
+            const success = generateCrossword(words);
+            if (!success) {
+                alert("Gagal membuat level. Silakan coba lagi.");
+                return;
             }
 
-            // Membuat link untuk setiap minggu
-            if (menuContainer) {
-                for (let i = 1; i <= totalMinggu; i++) {
-                    const button = document.createElement('button'); // Menggunakan button agar lebih mudah diakses dan diberi event
-                    button.setAttribute('type', 'button'); // Penting untuk aksesibilitas
-                    button.setAttribute('data-minggu', i); // Atribut kustom untuk nomor minggu
-                    
-                    let classList = 'inline-block px-4 py-2 rounded-full text-sm font-medium transition duration-200 shadow-sm ';
+            renderGrid();
+            startTimer();
+            showScreen('screen-game');
+        }
 
-                    if (i === 1) { // Minggu 1 aktif secara default
-                        classList += 'bg-indigo-600 text-white';
-                    } else {
-                        classList += 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700';
+        function generateCrossword(wordList) {
+            // Sort words by length desc
+            wordList.sort((a, b) => b.word.length - a.word.length);
+
+            // Reset Grid
+            grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+            placedWords = [];
+
+            // Place first word in center horizontal
+            const first = wordList[0];
+            const startRow = Math.floor(gridSize / 2);
+            const startCol = Math.floor((gridSize - first.word.length) / 2);
+
+            placeWord(first, startRow, startCol, 'across');
+
+            const remaining = wordList.slice(1);
+            let retries = 0;
+
+            // Simple greedy placement
+            for (const item of remaining) {
+                let placed = false;
+                // Try to intersect with existing placed words
+                // Shuffle placedWords to add variety if replaying (though this logic is deterministic per sort, shuffling helps if we randomized input)
+
+                for (const pw of placedWords) {
+                    if (placed) break;
+
+                    // Find common letters
+                    for (let i = 0; i < item.word.length; i++) { // char in new word
+                        if (placed) break;
+                        for (let j = 0; j < pw.word.length; j++) { // char in placed word
+                            if (item.word[i] === pw.word[j]) {
+                                // Intersection point
+                                const intersectRow = pw.row + (pw.dir === 'down' ? j : 0);
+                                const intersectCol = pw.col + (pw.dir === 'across' ? j : 0);
+
+                                // If pw is across, new word must be down, and vice versa
+                                const newDir = pw.dir === 'across' ? 'down' : 'across';
+
+                                // Calculate new start position
+                                const newRow = intersectRow - (newDir === 'down' ? i : 0);
+                                const newCol = intersectCol - (newDir === 'across' ? i : 0);
+
+                                if (canPlace(item.word, newRow, newCol, newDir)) {
+                                    placeWord(item, newRow, newCol, newDir);
+                                    placed = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
-                    
-                    button.className = classList;
-                    button.textContent = `Minggu ${i}`;
-                    
-                    menuContainer.appendChild(button);
                 }
-
-                // Tambahkan fungsionalitas untuk mengubah highlight dan konten saat diklik
-                menuContainer.addEventListener('click', function(e) {
-                    // Hanya proses jika yang diklik adalah button
-                    if (e.target.tagName === 'BUTTON' && e.target.hasAttribute('data-minggu')) {
-                        // Hapus status aktif dari semua button
-                        menuContainer.querySelectorAll('button').forEach(btn => {
-                            btn.classList.remove('bg-indigo-600', 'text-white');
-                            btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-indigo-50', 'hover:text-indigo-700');
-                        });
-                        
-                        // Tambahkan status aktif ke button yang baru diklik
-                        e.target.classList.add('bg-indigo-600', 'text-white');
-                        e.target.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-indigo-50', 'hover:text-indigo-700');
-                        
-                        // Tampilkan konten minggu yang sesuai
-                        const selectedWeek = parseInt(e.target.getAttribute('data-minggu'));
-                        showWeekContent(selectedWeek);
-                    }
-                });
             }
 
-            // Inisialisasi: Tampilkan Minggu 1 saat halaman dimuat
-            showWeekContent(1);
-        });
-    </script>
+            return placedWords.length > 0;
+        }
 
+        function canPlace(word, row, col, dir) {
+            if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return false;
+
+            // Check boundaries
+            if (dir === 'across') {
+                if (col + word.length > gridSize) return false;
+            } else {
+                if (row + word.length > gridSize) return false;
+            }
+
+            // Check collisions
+            for (let i = 0; i < word.length; i++) {
+                const r = row + (dir === 'down' ? i : 0);
+                const c = col + (dir === 'across' ? i : 0);
+
+                const cell = grid[r][c];
+
+                // Cell must be empty OR match the letter
+                if (cell !== null && cell !== word[i]) return false;
+
+                // Neighbor checks to prevent adjacent words merging unintentionally
+                // If cell is empty, it must not have neighbors on the perpendicular axis (unless it's an intersection which we handle)
+                // Actually, a simpler check:
+                // For each cell we place, if it was empty, check its neighbors perpendicular to direction.
+                // They must be empty.
+
+                if (cell === null) {
+                    if (dir === 'across') {
+                        // Check up and down
+                        if (r > 0 && grid[r-1][c] !== null) return false;
+                        if (r < gridSize-1 && grid[r+1][c] !== null) return false;
+                    } else {
+                        // Check left and right
+                        if (c > 0 && grid[r][c-1] !== null) return false;
+                        if (c < gridSize-1 && grid[r][c+1] !== null) return false;
+                    }
+                }
+            }
+
+            // Check start and end (cells before and after the word must be empty)
+            if (dir === 'across') {
+                if (col > 0 && grid[row][col-1] !== null) return false;
+                if (col + word.length < gridSize && grid[row][col + word.length] !== null) return false;
+            } else {
+                if (row > 0 && grid[row-1][col] !== null) return false;
+                if (row + word.length < gridSize && grid[row + word.length][col] !== null) return false;
+            }
+
+            return true;
+        }
+
+        function placeWord(item, row, col, dir) {
+            placedWords.push({ ...item, row, col, dir, number: 0 }); // number assigned later
+            for (let i = 0; i < item.word.length; i++) {
+                const r = row + (dir === 'down' ? i : 0);
+                const c = col + (dir === 'across' ? i : 0);
+                grid[r][c] = item.word[i];
+            }
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+
+            // Assign numbers
+            placedWords.sort((a,b) => (a.row - b.row) || (a.col - b.col));
+            let num = 1;
+            placedWords.forEach(pw => {
+                // Only assign number if not already assigned at this pos (intersection start)
+                // Check if any other word starts here
+                const existing = placedWords.find(w => w !== pw && w.row === pw.row && w.col === pw.col && w.number > 0);
+                if (existing) {
+                    pw.number = existing.number;
+                } else {
+                    pw.number = num++;
+                }
+            });
+
+            // Setup Clues
+            const acrossList = document.getElementById('clues-across');
+            const downList = document.getElementById('clues-down');
+            acrossList.innerHTML = '';
+            downList.innerHTML = '';
+
+            placedWords.forEach(pw => {
+                const li = document.createElement('li');
+                li.innerHTML = `<b>${pw.number}.</b> ${pw.clue}`;
+                if (pw.dir === 'across') acrossList.appendChild(li);
+                else downList.appendChild(li);
+            });
+
+            // Draw DOM Grid
+            // Find bounds to center the view or just use fixed size
+            // We use fixed 12x12 grid
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = `repeat(${gridSize}, 30px)`;
+            container.style.gridTemplateRows = `repeat(${gridSize}, 30px)`;
+
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const cellDiv = document.createElement('div');
+                    const char = grid[r][c];
+
+                    if (char === null) {
+                        cellDiv.className = 'cell black';
+                    } else {
+                        cellDiv.className = 'cell bg-white';
+                        
+                        // Check if a word starts here
+                        const starts = placedWords.filter(pw => pw.row === r && pw.col === c);
+                        if (starts.length > 0) {
+                            const numSpan = document.createElement('span');
+                            numSpan.className = 'cell-number';
+                            numSpan.innerText = starts[0].number;
+                            cellDiv.appendChild(numSpan);
+                        }
+
+                        const input = document.createElement('input');
+                        input.maxLength = 1;
+                        input.dataset.row = r;
+                        input.dataset.col = c;
+                        input.dataset.answer = char; // For debugging/checking
+                        
+                        // Input logic
+                        input.addEventListener('focus', () => cellDiv.classList.add('focused'));
+                        input.addEventListener('blur', () => cellDiv.classList.remove('focused'));
+                        input.addEventListener('keyup', (e) => handleInput(e, r, c));
+
+                        cellDiv.appendChild(input);
+                    }
+                    container.appendChild(cellDiv);
+                }
+            }
+        }
+
+        function handleInput(e, r, c) {
+            const inputs = document.querySelectorAll('input');
+            const current = e.target;
+
+            // If key is a letter, move to next input based on direction preference?
+            // This is tricky without knowing user intent. Simple approach: move right then down if blocked?
+            // Or just use arrow keys.
+
+            if (e.key.match(/^[a-zA-Z]$/)) {
+                current.value = e.key.toUpperCase();
+                // Auto focus next? We don't easily know "next" in which word.
+                // We can just let user click or use arrows.
+                // Let's try basic Right move
+                // find input at r, c+1
+                /*
+                const next = document.querySelector(`input[data-row="${r}"][data-col="${c+1}"]`);
+                if (next) next.focus();
+                */
+            } else if (e.key === 'ArrowRight') {
+                const next = document.querySelector(`input[data-row="${r}"][data-col="${c+1}"]`);
+                if (next) next.focus();
+            } else if (e.key === 'ArrowLeft') {
+                const next = document.querySelector(`input[data-row="${r}"][data-col="${c-1}"]`);
+                if (next) next.focus();
+            } else if (e.key === 'ArrowDown') {
+                const next = document.querySelector(`input[data-row="${r+1}"][data-col="${c}"]`);
+                if (next) next.focus();
+            } else if (e.key === 'ArrowUp') {
+                const next = document.querySelector(`input[data-row="${r-1}"][data-col="${c}"]`);
+                if (next) next.focus();
+            }
+        }
+
+        // TIMER
+        function startTimer() {
+            startTime = Date.now();
+            timeElapsed = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+                const m = Math.floor(timeElapsed / 60).toString().padStart(2, '0');
+                const s = (timeElapsed % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function checkAnswers() {
+            const inputs = document.querySelectorAll('input');
+            let allCorrect = true;
+            let filledCount = 0;
+
+            inputs.forEach(inp => {
+                if (inp.value.toUpperCase() !== inp.dataset.answer) {
+                    allCorrect = false;
+                    inp.parentElement.style.backgroundColor = '#fee2e2'; // red-100
+                } else {
+                    inp.parentElement.style.backgroundColor = '#dcfce7'; // green-100
+                }
+                if (inp.value) filledCount++;
+            });
+
+            if (allCorrect && filledCount === inputs.length) {
+                stopTimer();
+                showResult(true);
+            } else {
+                if (filledCount < inputs.length) {
+                    // Just feedback
+                } else {
+                    alert("Masih ada yang salah, ayo semangat!");
+                }
+            }
+        }
+
+        function giveUp() {
+            if(confirm("Yakin mau menyerah?")) {
+                stopTimer();
+                const inputs = document.querySelectorAll('input');
+                inputs.forEach(inp => {
+                    inp.value = inp.dataset.answer;
+                    inp.parentElement.style.backgroundColor = '#fff';
+                });
+                // Disable inputs
+                inputs.forEach(inp => inp.disabled = true);
+            }
+        }
+
+        // RESULTS
+        function showResult(win) {
+            const modal = document.getElementById('modal-result');
+            const title = document.getElementById('result-title');
+            const msg = document.getElementById('result-message');
+            const scoreEntry = document.getElementById('score-entry');
+            const saveBtn = document.getElementById('save-btn');
+
+            modal.classList.remove('hidden');
+
+            if (win) {
+                title.innerText = "Selamat! 🎉";
+                const score = Math.max(0, 1000 - (timeElapsed * 2)); // Simple scoring
+                msg.innerText = `Kamu menyelesaikan kategori ${currentCategory.toUpperCase()} dalam ${document.getElementById('timer').innerText}.\nSkor: ${score}`;
+                modal.dataset.score = score;
+
+                scoreEntry.classList.remove('hidden');
+                saveBtn.classList.remove('hidden');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal-result').classList.add('hidden');
+        }
+
+        // LEADERBOARD
+        function saveScore() {
+            const name = document.getElementById('player-name').value;
+            if (!name) {
+                alert("Masukkan nama dulu ya!");
+                return;
+            }
+
+            const score = parseInt(document.getElementById('modal-result').dataset.score);
+            const entry = {
+                name: name,
+                category: currentCategory,
+                score: score,
+                date: new Date().toISOString()
+            };
+
+            let lb = JSON.parse(localStorage.getItem('tts_leaderboard') || '[]');
+            lb.push(entry);
+            lb.sort((a, b) => b.score - a.score);
+            lb = lb.slice(0, 10); // Keep top 10
+
+            localStorage.setItem('tts_leaderboard', JSON.stringify(lb));
+
+            closeModal();
+            showLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            const lb = JSON.parse(localStorage.getItem('tts_leaderboard') || '[]');
+            const noScores = document.getElementById('no-scores');
+
+            list.innerHTML = '';
+
+            if (lb.length === 0) {
+                noScores.classList.remove('hidden');
+            } else {
+                noScores.classList.add('hidden');
+                lb.forEach(entry => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bg-white border-b';
+                    tr.innerHTML = `
+                        <td class="px-4 py-3 font-medium text-gray-900">${entry.name}</td>
+                        <td class="px-4 py-3 text-gray-500 capitalize">${entry.category}</td>
+                        <td class="px-4 py-3 text-right font-bold text-blue-600">${entry.score}</td>
+                    `;
+                    list.appendChild(tr);
+                });
+            }
+        }
+
+        // Start at Menu
+        showMenu();
+
+    </script>
 </body>
 </html>
-
